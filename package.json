@@ -5,7 +5,7 @@
   "description": "Galaxy Blackhole as a desktop app: the same UI the extension shows, in its own window.",
   "main": "src/main.js",
   "scripts": {
-    "host:stage": "bash scripts/prepare-host.sh",
+  "host:stage": "node scripts/prepare-host.mjs",
     "test": "node --test test/",
   "verify": "node scripts/check-version-sync.mjs",
     "dist": "npm run host:stage && electron-builder",
