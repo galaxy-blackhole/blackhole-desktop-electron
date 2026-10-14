@@ -18,7 +18,14 @@ try {
   cli = JSON.parse(readFileSync(join(root, 'host', 'cli', 'package.json'), 'utf8')).version;
   source = 'host/cli (bản sẽ đi kèm app)';
 } catch {
-  const cliDir = process.env.GBH_CLI ?? join(process.env.npm_config_prefix ?? '', 'lib', 'node_modules', '@galaxy-stack', 'blackhole-cli');
+  /*
+   * Resolved the same way the staging resolves it. Reading npm_config_prefix here meant that running this file
+   * outside npm — which is exactly what `npm run host:stage` does at its last step — joined an empty string and
+   * looked for the CLI under a relative 'lib/node_modules'.
+   */
+  const { execFileSync } = await import('node:child_process');
+  const cliDir = process.env.GBH_CLI
+    ?? join(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim(), '@galaxy-stack', 'blackhole-cli');
   cli = JSON.parse(readFileSync(join(cliDir, 'package.json'), 'utf8')).version;
   source = cliDir;
 }

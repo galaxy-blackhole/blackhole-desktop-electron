@@ -57,10 +57,13 @@ jobs:
         include:
           - os: macos-14
             args: --mac
+            target: darwin
           - os: windows-latest
             args: --win
+            target: win32
           - os: ubuntu-latest
             args: --linux
+            target: linux
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -77,9 +80,11 @@ jobs:
         run: npm ci
       - name: Stage the host and check the versions agree
         shell: bash
-        run: |
-          export GBH_CLI="$(npm root -g)/@galaxy-stack/blackhole-cli"
-          npm run host:stage
+        env:
+          # Which platform the copy is for. Staging the CLI with another platform's prebuilds is how a Windows app
+          # ends up with a node-pty it cannot load — the target, not the builder's laptop, decides.
+          GBH_TARGET: ${{ matrix.target }}
+        run: npm run host:stage
       - name: Build installers and update metadata
         run: npx electron-builder ${{ matrix.args }} --publish never
       - uses: actions/upload-artifact@v4
