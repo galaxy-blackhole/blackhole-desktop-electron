@@ -85,7 +85,9 @@ function updateGlobalCli(version, sender) {
   return new Promise((resolve) => {
     const argv = updateArgv(version);
     sender?.send("upgrade:log", "$ npm " + argv.join(" "));
-    const child = spawn("npm", argv, { env: { ...process.env }, stdio: ["ignore", "pipe", "pipe"] });
+    /* npm on Windows is a .cmd shim; spawn needs the extension to find it at all. */
+    const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+    const child = spawn(npm, argv, { env: { ...process.env }, stdio: ["ignore", "pipe", "pipe"] });
     const relay = (chunk) => sender?.send("upgrade:log", String(chunk).trimEnd());
     child.stdout.on("data", relay);
     child.stderr.on("data", relay);

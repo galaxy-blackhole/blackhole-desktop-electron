@@ -6,7 +6,7 @@
   "main": "src/main.js",
   "scripts": {
   "host:stage": "node scripts/prepare-host.mjs",
-    "test": "node --test test/",
+    "test": "node --test",
   "verify": "node scripts/check-version-sync.mjs",
     "dist": "npm run host:stage && electron-builder",
     "dist:dir": "npm run host:stage && electron-builder --dir",

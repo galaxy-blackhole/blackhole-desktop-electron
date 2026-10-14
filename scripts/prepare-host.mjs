@@ -12,6 +12,9 @@
  */
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readlinkSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+
+/** npm on Windows is a .cmd shim, and execFileSync will not run it without the extension. */
+const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,7 +23,7 @@ process.chdir(root);
 
 const target = process.env.GBH_TARGET ?? process.platform;
 const cliDir = process.env.GBH_CLI
-  ?? join(execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim(), '@galaxy-stack', 'blackhole-cli');
+  ?? join(execFileSync(NPM, ['root', '-g'], { encoding: 'utf8' }).trim(), '@galaxy-stack', 'blackhole-cli');
 
 if (!existsSync(join(cliDir, 'package.json'))) {
   console.error(`không thấy CLI ở ${cliDir}`);
