@@ -3,6 +3,35 @@
 Ứng dụng desktop **tự chứa**: không cần cài Node, không cần cài gì thêm. Trong gói có sẵn
 Electron (runtime của app) và một bản Node riêng (để chạy phần lõi), nên máy đích chỉ việc mở lên.
 
+## Tải về
+
+Bản phát hành nằm ở [Releases](https://github.com/galaxy-blackhole/blackhole-desktop-electron/releases/latest).
+Chọn đúng hệ và kiến trúc:
+
+| Hệ | Tệp |
+| --- | --- |
+| macOS (Apple Silicon) | `Galaxy.Blackhole-<version>-arm64.dmg` |
+| macOS (Intel) | `Galaxy.Blackhole-<version>.dmg` |
+| Windows | `Galaxy.Blackhole.Setup.<version>.exe` |
+| Linux | `Galaxy.Blackhole-<version>.AppImage` hoặc `blackhole-desktop-<version>.tar.gz` |
+
+`SHA256SUMS.txt` đi kèm để kiểm tra tệp đã tải.
+
+### Bản chưa ký số — máy sẽ cảnh báo, đây là cách mở
+
+Chưa có Apple Developer ID và chứng thư Windows, nên hệ điều hành sẽ cảnh báo. Đây là chủ ý, không phải lỗi build:
+
+- **macOS**: Finder → chuột phải vào app → **Mở** → **Mở** lần nữa. Nếu vẫn bị chặn:
+  `xattr -dr com.apple.quarantine "/Applications/Galaxy Blackhole.app"`
+- **Windows**: SmartScreen → **More info** → **Run anyway**.
+
+### Nút “Kiểm tra nâng cấp…”
+
+Nằm trong menu của app. Nó đọc ba version — bản desktop, bản CLI đi kèm, và bản CLI trên máy — rồi nâng cấp.
+Trên Windows và Linux app thay tại chỗ; trên macOS (chưa ký) nó mở trang tải để bạn lấy dmg mới. Nếu máy đã có
+`blackhole` thì nó nâng CLI lên **đúng version của bản desktop**, đọc lại để xác nhận, và **không bao giờ tự dùng
+`sudo`** — khi npm từ chối vì quyền, nó hiện lệnh cho bạn.
+
 ## Dựng bản macOS
 
 ```bash
