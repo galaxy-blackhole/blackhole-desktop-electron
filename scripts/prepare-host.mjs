@@ -10,7 +10,7 @@
  * The layout written here IS the layout inside Resources/app: the shell resolves its host at host/cli/dist/cli.js
  * next to host/bin/node.
  */
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readlinkSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readlinkSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,10 +76,18 @@ function copyTree(source, destination) {
     const linkTarget = readlinkSync(source);
     try {
       symlinkSync(linkTarget, destination);
+      return 1;
     } catch {
+      /*
+       * A platform that refuses to create the link gets the thing it pointed at. Following it matters: npm's .bin
+       * entries include links to directories, and copying one of those as a file fails with EISDIR — which is how
+       * the macOS and Linux runners failed a step that passed on the machine this was written on.
+       */
+      const target = statSync(source);
+      if (target.isDirectory()) return copyTree(realpathSync(source), destination);
       copyFileSync(source, destination);
+      return 1;
     }
-    return 1;
   }
   if (stats.isDirectory()) {
     mkdirSync(destination, { recursive: true });

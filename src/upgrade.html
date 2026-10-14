@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8" /><title>Nâng cấp</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background: #1a1a1a; color: #d7d7d7; font: 13px -apple-system, system-ui, sans-serif; margin: 0; padding: 18px 20px; }
+  h1 { font-size: 14px; margin: 0 0 14px; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 14px; }
+  td { padding: 5px 0; border-bottom: 1px solid #2a2a2a; }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .behind { color: #ffb454; }
+  .same { color: #6cc48c; }
+  .missing { color: #8a8a8a; }
+  button { background: #4d6bfe; border: 0; border-radius: 6px; color: #fff; cursor: pointer; font-size: 13px; padding: 7px 14px; }
+  button.secondary { background: #2c2c2c; }
+  button:disabled { cursor: default; opacity: .5; }
+  #steps { color: #9d9d9d; line-height: 1.6; margin-bottom: 14px; white-space: pre-line; }
+  pre { background: #111; border-radius: 6px; color: #b9b9b9; font-size: 11px; margin: 0; max-height: 150px; overflow: auto; padding: 10px; white-space: pre-wrap; }
+  .row { display: flex; gap: 10px; }
+</style></head><body>
+  <h1>Nâng cấp</h1>
+  <table><tbody>
+    <tr><td>Desktop</td><td id="desktop">…</td></tr>
+    <tr><td>CLI kèm trong app</td><td id="bundled">…</td></tr>
+    <tr><td>CLI trên máy</td><td id="global">…</td></tr>
+  </tbody></table>
+  <div id="steps">đang kiểm tra…</div>
+  <div class="row">
+    <button id="upgrade">Nâng cấp</button>
+    <button class="secondary" id="recheck">Kiểm tra lại</button>
+  </div>
+  <pre id="log"></pre>
+  <script>
+    const log = (line) => { const node = document.getElementById('log'); node.textContent += line + '\n'; node.scrollTop = node.scrollHeight; };
+    const paint = (versions) => {
+      const cell = (id, value, state) => { const node = document.getElementById(id); node.textContent = value ?? 'chưa cài'; node.className = state; };
+      cell('desktop', versions.desktop, 'same');
+      cell('bundled', versions.bundledCli, versions.bundledCli === versions.desktop ? 'same' : 'behind');
+      cell('global', versions.globalCli, versions.globalCli === null ? 'missing' : versions.globalCli === versions.desktop ? 'same' : 'behind');
+    };
+    const refresh = async () => {
+      const versions = await window.galaxyUpgrade.versions();
+      paint(versions);
+      const plan = await window.galaxyUpgrade.plan();
+      document.getElementById('steps').textContent = plan.steps.join('\n');
+      if (plan.error) log('kiểm tra: ' + plan.error);
+      return plan;
+    };
+    window.galaxyUpgrade.onLog(log);
+    document.getElementById('recheck').onclick = () => { void refresh(); };
+    document.getElementById('upgrade').onclick = async () => {
+      document.getElementById('upgrade').disabled = true;
+      try { const result = await window.galaxyUpgrade.desktop(); log(JSON.stringify(result)); await window.galaxyUpgrade.cli(); }
+      finally { document.getElementById('upgrade').disabled = false; void refresh(); }
+    };
+    void refresh();
+  </script>
+</body></html>

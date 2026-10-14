@@ -85,6 +85,8 @@ jobs:
           # ends up with a node-pty it cannot load — the target, not the builder's laptop, decides.
           GBH_TARGET: ${{ matrix.target }}
         run: npm run host:stage
+      - name: Test the upgrade decision before shipping it
+        run: npm test
       - name: Build installers and update metadata
         run: npx electron-builder ${{ matrix.args }} --publish never
       - uses: actions/upload-artifact@v4
