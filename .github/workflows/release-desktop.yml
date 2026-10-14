@@ -1,0 +1,119 @@
+# Releases the desktop app on GitHub, and carries the CLI version it was built against.
+#
+# The installers and the update metadata in the same release are what electron-updater reads, so the *.yml files
+# and the *.blockmap files must be uploaded next to the installers — a release with only the dmg is a release the
+# upgrade button cannot use.
+name: Release Desktop
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build — it must already exist as the published CLI's version"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  # No Apple Developer ID yet: build unsigned instead of letting electron-builder hunt for a certificate.
+  CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      value: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#desktop-v}"
+          fi
+          PACKAGE="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PACKAGE" ]; then
+            echo "tag/tag input says $VERSION but package.json says $PACKAGE — bump one of them" >&2
+            exit 1
+          fi
+          PUBLISHED="$(npm view @galaxy-stack/blackhole-cli@$VERSION version 2>/dev/null || true)"
+          if [ "$PUBLISHED" != "$VERSION" ]; then
+            echo "the CLI $VERSION is not on npm yet — publish it first, or the app would embed a version nobody can install" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "desktop and CLI are both $VERSION"
+
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            args: --mac
+          - os: windows-latest
+            args: --win
+          - os: ubuntu-latest
+            args: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install the CLI at exactly the version being released
+        shell: bash
+        run: |
+          npm install -g "@galaxy-stack/blackhole-cli@${{ needs.version.outputs.value }}"
+          node -p "require('child_process').execSync('npm root -g').toString().trim()"
+      - name: Install desktop dependencies
+        run: npm ci
+      - name: Stage the host and check the versions agree
+        shell: bash
+        run: |
+          export GBH_CLI="$(npm root -g)/@galaxy-stack/blackhole-cli"
+          npm run host:stage
+      - name: Build installers and update metadata
+        run: npx electron-builder ${{ matrix.args }} --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.tar.gz
+            dist/*.yml
+            dist/*.blockmap
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Checksums, so a download can be verified
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ needs.version.outputs.value }}"
+          gh release create "desktop-v$VERSION" artifacts/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Galaxy Blackhole Desktop $VERSION" \
+            --notes "Desktop $VERSION, carrying CLI $VERSION."

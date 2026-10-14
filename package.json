@@ -1,0 +1,25 @@
+{
+  "name": "blackhole-desktop",
+  "private": true,
+  "version": "2.2.0",
+  "description": "Galaxy Blackhole as a desktop app: the same UI the extension shows, in its own window.",
+  "main": "src/main.js",
+  "scripts": {
+    "host:stage": "bash scripts/prepare-host.sh",
+    "verify": "node scripts/check-version-sync.mjs",
+    "dist": "npm run host:stage && electron-builder",
+    "dist:dir": "npm run host:stage && electron-builder --dir",
+    "start": "electron .",
+    "smoke": "electron . --smoke"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "^38.8.6",
+    "electron-builder": "^25.1.8"
+  },
+  "allowScripts": {
+    "electron@38.8.6": true
+  }
+}

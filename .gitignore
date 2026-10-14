@@ -1,0 +1,8 @@
+# Build output, not source: host/ is a copy of the published CLI plus the Node runtime that travels with it, and
+# dist/ is what electron-builder produces.
+release/
+host/
+dist/
+build-info.json
+node_modules/
+.DS_Store

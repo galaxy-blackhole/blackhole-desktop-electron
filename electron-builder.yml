@@ -1,0 +1,54 @@
+# electron-builder owns the release: it builds the installers AND the update metadata (latest-mac.yml, latest.yml,
+# latest-linux.yml) that electron-updater reads. `npm run host:stage` writes host/ before the build, and the layout
+# it writes is exactly what the shell expects: Resources/app/host/cli/dist/cli.js next to host/bin/node.
+appId: com.galaxyblackhole.desktop
+productName: Galaxy Blackhole
+copyright: Galaxy Blackhole
+directories:
+  output: dist
+  buildResources: build
+# asar stays off: the shell spawns host/bin/node with host/cli/dist/cli.js, and a spawned process cannot read a file
+# inside an archive. It is also why the installer is large — a real Node travels with the app on purpose, because
+# DSH's native addon refuses Electron's runtime by fingerprint.
+asar: false
+# Never rebuild: host/cli/node_modules holds native modules built for the bundled Node, not for Electron. A rebuild
+# here would replace working binaries with ones the app cannot load.
+npmRebuild: false
+nodeGypRebuild: false
+files:
+  - src/**/*
+  - host/**/*
+  - build-info.json
+  - package.json
+mac:
+  category: public.app-category.developer-tools
+  # No Apple Developer ID yet, so this build is unsigned ON PURPOSE: `identity: null` stops electron-builder from
+  # hunting for a certificate and producing a half-signed app. macOS warns on first open; README says how to open it.
+  # Consequence for the upgrade button: macOS cannot self-update an unsigned app, so there it downloads the new dmg
+  # and opens it instead (Windows and Linux update in place).
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Development
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: tar.gz
+      arch: [x64]
+publish:
+  provider: github
+  owner: galaxy-blackhole
+  repo: blackhole-desktop-electron
