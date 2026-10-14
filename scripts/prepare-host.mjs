@@ -13,8 +13,13 @@
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readlinkSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-/** npm on Windows is a .cmd shim, and execFileSync will not run it without the extension. */
-const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+/*
+ * npm on Windows is a .cmd shim. Naming it is not enough: since Node 20 refuses to spawn a .cmd without a shell,
+ * so the call has to ask for one — EINVAL, not ENOENT, is what that refusal looks like in a log.
+ */
+const ON_WINDOWS = process.platform === 'win32';
+const NPM = ON_WINDOWS ? 'npm.cmd' : 'npm';
+const NPM_OPTIONS = { encoding: 'utf8', shell: ON_WINDOWS };
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,7 +28,7 @@ process.chdir(root);
 
 const target = process.env.GBH_TARGET ?? process.platform;
 const cliDir = process.env.GBH_CLI
-  ?? join(execFileSync(NPM, ['root', '-g'], { encoding: 'utf8' }).trim(), '@galaxy-stack', 'blackhole-cli');
+  ?? join(execFileSync(NPM, ['root', '-g'], NPM_OPTIONS).trim(), '@galaxy-stack', 'blackhole-cli');
 
 if (!existsSync(join(cliDir, 'package.json'))) {
   console.error(`không thấy CLI ở ${cliDir}`);

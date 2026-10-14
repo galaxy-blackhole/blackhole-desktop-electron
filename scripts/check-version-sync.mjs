@@ -24,9 +24,10 @@ try {
    * looked for the CLI under a relative 'lib/node_modules'.
    */
   const { execFileSync } = await import('node:child_process');
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const onWindows = process.platform === 'win32';
+  const npm = onWindows ? 'npm.cmd' : 'npm';
   const cliDir = process.env.GBH_CLI
-    ?? join(execFileSync(npm, ['root', '-g'], { encoding: 'utf8' }).trim(), '@galaxy-stack', 'blackhole-cli');
+    ?? join(execFileSync(npm, ['root', '-g'], { encoding: 'utf8', shell: onWindows }).trim(), '@galaxy-stack', 'blackhole-cli');
   cli = JSON.parse(readFileSync(join(cliDir, 'package.json'), 'utf8')).version;
   source = cliDir;
 }
