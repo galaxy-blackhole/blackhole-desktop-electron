@@ -1,7 +1,7 @@
 {
   "name": "blackhole-desktop",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Galaxy Blackhole as a desktop app: the same UI the extension shows, in its own window.",
   "main": "src/main.js",
   "scripts": {
